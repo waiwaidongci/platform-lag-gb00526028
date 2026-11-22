@@ -3,6 +3,7 @@ import {panel, pill} from '../components/common/panels.js';
 import {table} from '../components/common/table.js';
 import {REVIEW} from '../constants/enums.js';
 import {handler} from '../hooks/action.js';
+import {pageLabel} from '../router/routes.js';
 import {workspace} from '../stores/workspace.js';
 import {button, el, link, p} from '../utils/dom.js';
 import {date} from '../utils/format.js';
@@ -28,6 +29,6 @@ export async function deliveryPage(route, refresh) {
     {key:'detail',label:'说明'}, {label:'时间',render:row=>date(row.created_at)},
     {label:'查看',render:row=>link(`运行 ${row.run_id}`,`#results/${row.run_id}`)},
   ],await workspace.deliveries(),{caption:'站内收件箱',empty:'计划到时执行，回执将在此更新。'})) : null;
-  return el('div',{}, panel(spec.pages[5], p('按运行批次下载 CSV，复核状态随报告保留。','subtle'), artifacts, message),
+  return el('div',{}, panel(pageLabel(spec,'delivery'), p('按运行批次下载 CSV，复核状态随报告保留。','subtle'), artifacts, message),
     delivery, spec.scheduled && await runPage({...route,scheduling:true},refresh));
 }

@@ -11,6 +11,7 @@ from src.models.identity import User
 from src.models.jobs import Run
 from src.models.source import Dataset
 from src.schemas.requests import ReviewRequest, RunRequest
+from src.services import timetable
 from src.services.audit import record
 from src.services.validation import normalize_params
 from src.utils import views
@@ -34,20 +35,26 @@ def index(db: Session = Depends(connection), actor: User = Depends(current)):
 @router.post('', status_code=202)
 def create(body: RunRequest, db: Session = Depends(connection),
            actor: User = Depends(allow(Role.ADMIN, Role.ANALYST))):
-    if not db.get(Dataset, body.dataset_id):
+    dataset = db.get(Dataset, body.dataset_id)
+    if not dataset:
         raise HTTPException(404, '找不到指定的数据批次')
     item = Run(name=body.name, dataset_id=body.dataset_id, params=normalize_params(body.params), author=actor.username)
     db.add(item)
     db.flush()
-    record(db, actor.username, 'analysis.queued', item.id, dataset_id=item.dataset_id)
+    platform, first, last = timetable.dataset_window(dataset.rows)
+    snapshot = timetable.capture(db, platform, first, last)
+    timetable.store(db, item.id, snapshot)
+    record(db, actor.username, 'analysis.queued', item.id, dataset_id=item.dataset_id,
+           timetable_calls=len(snapshot['calls']), timetable_available=snapshot['available'])
     db.commit()
     wake()
-    return views.run(item, detail=True)
+    return views.run(item, detail=True, timetable=snapshot)
 
 
 @router.get('/{run_id}')
 def detail(run_id: int, db: Session = Depends(connection), actor: User = Depends(current)):
-    return views.run(require_job(db, run_id), detail=True)
+    item = require_job(db, run_id)
+    return views.run(item, detail=True, timetable=timetable.snapshot_for(db, item.id))
 
 
 @router.get('/{run_id}/export')
@@ -77,4 +84,4 @@ def review(run_id: int, body: ReviewRequest, db: Session = Depends(connection),
     item.review, item.review_note, item.decision = body.review, body.note, body.decision or None
     record(db, actor.username, f'review.{item.review}', item.id, note=body.note, decision=item.decision)
     db.commit()
-    return views.run(item, detail=True)
+    return views.run(item, detail=True, timetable=timetable.snapshot_for(db, item.id))

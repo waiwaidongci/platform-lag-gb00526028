@@ -1,6 +1,7 @@
 import {panel, metrics, pill, empty} from '../components/common/panels.js';
 import {table} from '../components/common/table.js';
 import {STATUS} from '../constants/enums.js';
+import {pageLabel} from '../router/routes.js';
 import {session} from '../stores/session.js';
 import {workspace} from '../stores/workspace.js';
 import {el, h, link, p} from '../utils/dom.js';
@@ -13,7 +14,7 @@ export async function overview() {
   return el('div', {class:'overview'},
     el('div', {class:'overview-main'},
       el('section', {class:'hero'}, p(spec.organization,'eyeline'), h(2,spec.subtitle), p(spec.workflow,'intro-copy'),
-        el('div',{class:'actions'}, link(spec.pages[1], '#inputs', {class:'primary'}), link(spec.pages[2], '#run',{class:'quiet'}))),
+        el('div',{class:'actions'}, link(pageLabel(spec,'inputs'), '#inputs', {class:'primary'}), link(pageLabel(spec,'run'), '#run',{class:'quiet'}))),
       panel('业务处理步骤', el('ol', {class:'work-steps'}, spec.steps.map(text => el('li', {}, text)))),
       feed.length && panel('最近审计事件',table([
         {key:'actor',label:'操作者'}, {key:'event',label:'动作'}, {key:'target',label:'关联记录'},

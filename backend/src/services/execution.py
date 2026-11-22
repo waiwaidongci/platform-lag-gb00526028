@@ -8,6 +8,7 @@ from src.domain.spec import SPEC
 from src.models.jobs import Delivery, Run, Schedule
 from src.models.source import Dataset
 from src.services.audit import record
+from src.services.timetable import capture, dataset_window, snapshot_for, store
 from src.utils.exports import write_report
 from src.utils.time import now
 
@@ -36,8 +37,14 @@ def materialize_due():
                 item.next_at = due + timedelta(days=1)
             else:
                 item.enabled = False
-            db.add(Run(dataset_id=dataset_id, schedule_id=item.id, scheduled_at=due,
-                       name=item.name, params=params, author=item.author))
+            job = Run(dataset_id=dataset_id, schedule_id=item.id, scheduled_at=due,
+                      name=item.name, params=params, author=item.author)
+            db.add(job)
+            db.flush()
+            dataset = db.get(Dataset, dataset_id)
+            if dataset:
+                platform, first, last = dataset_window(dataset.rows)
+                store(db, job.id, capture(db, platform, first, last))
 
 
 def claim():
@@ -58,14 +65,14 @@ def claim():
         job.attempt += 1
         job.lease_until = stamp + timedelta(minutes=3)
         records = db.get(Dataset, job.dataset_id).rows
-        return job.id, job.attempt, records, job.params
+        return job.id, job.attempt, records, job.params, snapshot_for(db, job.id)
 
 
 def execute(lease):
-    job_id, attempt, rows, params = lease
+    job_id, attempt, rows, params, snapshot = lease
     result = export = failure = None
     try:
-        result = analyze(rows, params)
+        result = analyze(rows, params, snapshot)
         export = write_report(job_id, attempt, result)
     except ValueError as error:
         failure = str(error)[:500]

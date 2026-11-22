@@ -28,3 +28,13 @@ class ScheduleRequest(RunRequest):
     recipient: str = Field(min_length=1, max_length=100)
     first_at: datetime
     repeat_daily: bool = False
+
+class TrainCallEntry(Request):
+    train_no: str = Field(min_length=1, max_length=64)
+    arrival_at: str = Field(min_length=1, max_length=32)
+    departure_at: str = Field(min_length=1, max_length=32)
+    revision: int | None = Field(default=None, ge=0)
+
+class TrainTimesRequest(Request):
+    platform: str = Field(min_length=1, max_length=300)
+    calls: list[TrainCallEntry] = Field(min_length=1, max_length=500)

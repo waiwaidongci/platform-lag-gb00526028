@@ -2,6 +2,7 @@ import {feedback, field} from '../components/common/fields.js';
 import {empty, panel, pill} from '../components/common/panels.js';
 import {REVIEW} from '../constants/enums.js';
 import {handler} from '../hooks/action.js';
+import {pageLabel} from '../router/routes.js';
 import {session} from '../stores/session.js';
 import {workspace} from '../stores/workspace.js';
 import {button, el, link, p} from '../utils/dom.js';
@@ -25,7 +26,7 @@ export async function reviewPage(route, refresh) {
   const {spec, runs} = workspace;
   const completed = runs.filter(run => run.status === 'complete');
   const id = route.id || completed[0]?.id;
-  if (!id) return panel(spec.pages[4], empty('先完成一次运行，再复核结果。','#run',spec.pages[2]));
+  if (!id) return panel(pageLabel(spec,'review'), empty('先完成一次运行，再复核结果。','#run',pageLabel(spec,'run')));
   const job = await workspace.getRun(id);
   if (!job.result) return panel(job.name, empty('当前运行没有可复核结果。',`#results/${job.id}`,'查看运行状态'));
   return el('div', {class:'two-col'},

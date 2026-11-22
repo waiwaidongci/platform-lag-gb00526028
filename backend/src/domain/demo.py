@@ -1,12 +1,26 @@
-"""澄湾站调频巡检样本，含已知三格滞后和三类采集缺口。"""
+"""澄湾站调频巡检样本，含已知三格滞后、列车到离站记录和三类采集缺口。"""
 
 from datetime import datetime, timedelta
 from random import Random
 
+_START = datetime(2026, 11, 21, 9, 30)
+# 六趟车各停站 90 秒，发车间隔 150 秒，覆盖 09:31:00 至 09:44:30。
+_CALLS = [(60 + index * 150, 90) for index in range(6)]
+
+
+def demo_calls() -> list[dict]:
+    return [{
+        "platform": "澄湾站下行站台",
+        "train_no": f"G{1001 + index}",
+        "arrival_at": (_START + timedelta(seconds=offset)).isoformat(sep=" "),
+        "departure_at": (_START + timedelta(seconds=offset + dwell)).isoformat(sep=" "),
+        "revision": 1,
+    } for index, (offset, dwell) in enumerate(_CALLS)]
+
 
 def demo_rows() -> list[dict]:
     rng = Random(52)
-    start = datetime(2026, 11, 21, 9, 30)
+    start = _START
     sweep = (31, 44, 36, 49, 39, 28, 46, 34, 42)
     frequency = [sweep[slot // 10] + rng.uniform(-1.2, 1.2) for slot in range(90)]
     rows = []

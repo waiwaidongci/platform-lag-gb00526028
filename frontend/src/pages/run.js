@@ -61,5 +61,10 @@ export async function runPage(route, refresh) {
     panel(spec.run,session.canWrite ? (datasets.length ? form : empty('请先导入数据。','#inputs','前往导入'))
       : p('只读角色可以查看上方业务流程的历史运行。','empty')),
     !scheduling && panel('运行记录',runList),scheduleList),
-    el('aside',{class:'sidebar-panel'},panel('计算口径',el('ul',{class:'method-list'},spec.methodology.map(text=>el('li',{},text))))));
+    el('aside',{class:'sidebar-panel'},
+      panel('扫描前的车次依据',
+        p('受理时会固化当时的到离站记录，已排队和重试都按该快照计算。','subtle'),
+        p('需要补录或更正车次时，先到「到离站记录」处理，再提交新的扫描。','subtle'),
+        link('维护到离站记录','#trains',{class:'quiet'})),
+      panel('计算口径',el('ul',{class:'method-list'},spec.methodology.map(text=>el('li',{},text))))));
 }
